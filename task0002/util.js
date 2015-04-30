@@ -259,12 +259,36 @@ function $(selector) {
 // 给一个dom绑定一个针对event事件的响应，响应函数为listener
 function addEvent(element, event, listener) {
   if(!listener || !event || !element) return;
+
+  /*由于匿名函数无法去除，所以把函数命名前和命名后都存放在元素里面*/
+  element[event+'Events'] = element[event+'Events'] || [];
+
+  /*把函数命名为_listener*/
+  var _listener = undefined;
+
   if(element.addEventListener){
-    element.addEventListener(event,listener,false);
+    /*命名*/
+    _listener = listener;
+
+    /*把用户传入函数和包装后的函数保存*/
+    element[event+'Events'].push({
+      raw:listener,
+      wrap:_listener
+    });
+
+    element.addEventListener(event,_listener,false);
   }else if(element.attachEvent){
-    element.attachEvent('on'+event,function(){
+
+    _listener = function(){
       listener.call(element);
-    })
+    }
+
+    element[event+'Events'].push({
+      raw:listener,
+      wrap:_listener
+    });
+    
+    element.attachEvent('on'+event,_listener);
   }else{
     element['on'+event] = listener;
   }
@@ -274,14 +298,44 @@ function addEvent(element, event, listener) {
 // 移除dom对象对于event事件发生时执行listener的响应，当listener为空时，移除所有响应函数
 function removeEvent(element, event, listener) {
   if(!event || !element) return;
-  if(!listener){
-    element['on'+event] = null;
-    return;
-  }
+  
   if(element.removeEventListener){
-    element.removeEventListener(event,listener,false);
+
+    /*如果传入listener为空，移除所有该事件的响应函数*/
+    if(!listener){
+      for (var i = 0 ; i < element[event+'Events'].length ; i++){
+
+        element.removeEventListener(event,element[event+'Events'][i].wrap,false);
+      }
+      return;
+    }
+
+    /*如果并不是通过util传入的事件*/
+    if( !element[event+'Events'] ){
+      element.removeEventListener(event,listener,false);
+    }
+    else{
+      /*通过传入的函数找到包装函数来去除*/
+      element.removeEventListener(event,findWrapEvent(element,event,listener),false);
+    }
+
   }else if(element.detachEvent){
-    element.detachEvent('on'+event,listener)
+
+    if(!listener){
+      for (var i = 0 ; i < element[event+'Events'].length ; i++){
+
+        element.detachEvent('on'+event,element[event+'Events'][i].wrap);
+      }
+      return;
+    }
+
+    if( !element[event+'Events'] ){
+      element.detachEvent('on'+event,listener);
+    }
+    else{
+      element.detachEvent('on'+event,findWrapEvent(element,event,listener));
+    }
+
   }else{
     element['on'+event] = null;
   }
@@ -296,40 +350,92 @@ function addClickEvent(element, listener) {
 // 实现对于按Enter键时的事件绑定
 function addEnterEvent(element, listener) {
   if(!listener || !element) return;
+
+  element['keyupEvents'] = element['keyupEvents'] || [];
+  var _listener = undefined;
+
   if(element.addEventListener){
-    element.addEventListener('keyup',function(event){
+
+    /*包装函数*/
+     _listener = function(event){
       if(event.keyCode == 13){
         listener.call(element,event);
       }
-    },false);
+    };
+
+    element['keyupEvents'].push({
+      raw:listener,
+      wrap:_listener
+    });
+
+    element.addEventListener('keyup',_listener,false);
   }else if(element.attachEvent){
-    element.attachEvent('onkeyup',function(){
+
+    _listener = function(){
       if(window.event.keyCode == 13){
         listener.call(element,window.event);
       }
-    })
-  }else{
+    }
+
+    element['keyupEvents'].push({
+      raw:listener,
+      wrap:_listener
+    });
+
+    element.attachEvent('onkeyup',_listener);
   }
 }
 
 //事件委托
 function delegateEvent(element, tag, event, listener) {
   if(!listener || !event || !tag || !element) return;
+
+  element['keyupEvents'] = element['keyupEvents'] || [];
+  var _listener = undefined;
+
   if(element.addEventListener){
-    element.addEventListener(event,function(ev){
+
+    _listener = function(ev){
       if(ev.target.tagName.toUpperCase() === tag.toUpperCase()){
         listener.call(ev.target,ev);
       }
-    },false);
+    }
+    element[event+'Events'].push({
+      raw:listener,
+      wrap:_listener
+    });
+
+    addEvent(element,event,_listener);
   }else if(element.attachEvent){
-    element.attachEvent('on'+event,function(){
+
+    _listener = function(){
       if(window.event.srcElement.tagName.toUpperCase() === tag.toUpperCase()){
         listener.call(window.event.srcElement,window.event);
       }
-    })
+    }
+    element[event+'Events'].push({
+      raw:listener,
+      wrap:_listener
+    });
+    addEvent(element,event,_listener);
+
   }else{
     return false;
   }
+}
+
+/*根据传入的用户定义函数找出真正添加的函数*/
+function findWrapEvent(element,event,raw){
+  var i = 0 ;
+
+  /*通过用户传入函数或遭到包装函数*/
+  for( ; i < element[event+'Events'].length ; i++){
+    if( element[event+'Events'][i].raw.toString() === raw.toString() ){
+      return element[event+'Events'][i].wrap ;
+    }
+  }
+
+  return null;
 }
 
 $.on = function(selector, event, listener) {
