@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zj-cmn-Hans">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GTD Tools</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <header>
+        <div>
+            <h1 id="header-title">GTD Tools</h1>
+        </div>
+    </header>
+    <menu>
+        <div>
+            <div id="all-mission">所有任务（11）</div>
+            <div id="tabulation">
+                <h2 id="tab-title">分类列表</h2>
+                <dl>
+                    <dt>百度IFE项目</dt>
+                    <dd>task1</dd>
+                    <dd>task2</dd>
+                    <dt>毕业论文</dt>
+                    <dt>社团</dt>
+                </dl>
+            </div>
+            <div class="add-at-bottom">
+                <a href="javascript:" id="add-tab">新增分类</a>
+            </div>
+        </div>
+    </menu>
+    <div id="mission-side">
+        <div id="mission-type">
+            <a href="javascript:" class="type-active" title="所有任务">所有</a>
+            <a href="javascript:" title="未完成的任务">未完成</a>
+            <a href="javascript:" title="已完成的任务">已完成</a>
+        </div>
+        <div id="mission-timeline">
+            <ol>
+                <li>
+                    <dl>
+                        <dt>2015-05-04</dt>
+                        <dd class="mission-selected">to-do</dd>
+                        <dd>to-do</dd>
+                    </dl>
+                </li>
+                <li>
+                    <dl>
+                        <dt>2015-05-01</dt>
+                        <dd>to-do</dd>
+                        <dd>to-do</dd>
+                    </dl>
+                </li>
+                <li>
+                    <dl>
+                        <dt>2015-04-28</dt>
+                        <dd>to-do</dd>
+                        <dd>to-do</dd>
+                    </dl>
+                </li>
+                <li>
+                    <dl>
+                        <dt>2015-04-09</dt>
+                        <dd>to-do</dd>
+                        <dd>to-do</dd>
+                    </dl>
+                </li>
+            </ol>
+        </div>
+        <div class="add-at-bottom">
+            <a href="javascript:" id="add-mission">新增任务</a>
+        </div>
+    </div>
+    <div id="mission-cont">
+        <div id="cont-title-bar">
+            <h2>to-do-1</h2>
+            <a href="javascript:" class="icon-btn" id="edit-mission" title="编辑任务"></a>
+            <a href="javascript:" class="icon-btn" id="finish-mission" title="完成任务"></a>
+        </div>
+        <div id="cont-mission-time">
+            任务日期：2015-04-30
+        </div>
+        <div id="cont-mission-body"></div>
+    </div>
+    <script src="js/util.js"></script>
+    <script src="js/index.js"></script>
+</body>
+</html>
