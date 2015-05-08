@@ -390,7 +390,7 @@ function addEnterEvent(element, listener) {
 function delegateEvent(element, tag, event, listener) {
   if(!listener || !event || !tag || !element) return;
 
-  element['keyupEvents'] = element['keyupEvents'] || [];
+  element[event+'Events'] = element[event+'Events'] || [];
   var _listener = undefined;
 
   if(element.addEventListener){
