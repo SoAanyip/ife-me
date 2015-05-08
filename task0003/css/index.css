@@ -14,7 +14,7 @@ body{
 }
 
 /* header */
-header > div{
+#header-cont{
     position: relative;
     height: 60px;
     min-width: 860px;
@@ -129,6 +129,9 @@ menu > div,#mission-side{
     padding: 0;
     margin: 0;
     list-style: none;
+}
+#mission-timeline dl{
+    margin: 0;
 }
 #mission-timeline dl > *{
     height: 26px;

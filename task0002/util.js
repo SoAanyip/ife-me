@@ -88,15 +88,27 @@ function isMobilePhone(phone) {
   return phoneReg.test(phone);
 }
 
+//检测dom是否具有名字为className的class
+function hasClass(element,className){
+  if(!className || !element || !element.className) return false;
+  var index = element.className.indexOf(className);
+  if(index === -1) return false;
+  return true;
+}
+
 // 为dom增加一个样式名为newClassName的新样式
 function addClass(element, newClassName) {
   if(!newClassName || !element) return;
-  if(element.className.indexOf(newClassName) === -1) element.className+=' '+newClassName;
+  if(!element.className){
+    element.className = newClassName;
+  }else if(element.className.indexOf(newClassName) === -1){
+    element.className+=' '+newClassName;
+  }
 }
 
 // 移除dom中的样式oldClassName
 function removeClass(element, oldClassName) {
-  if(!oldClassName || !element) return;
+  if(!oldClassName || !element || !element.className) return;
   var index = element.className.indexOf(oldClassName);
   if(index === -1) return;
   element.className = element.className.substring(0,index) + element.className.substring(index+oldClassName.length);
@@ -138,7 +150,9 @@ function $(selector) {
       /*匹配属性的正则*/
       bracketNameReg = /^\[[\w\d-_]+\]$/,
       /*匹配属性为某值的正则*/
-      bracketValReg = /^\[[\w\d-_]+\=[\d\w-_\"\']+\]$/;
+      bracketValReg = /^\[[\w\d-_]+\=[\d\w-_\"\']+\]$/,
+      /*匹配标签的正则*/
+      tagReg = /^[\w]+$/;
 
   if(/*document.querySelector*/false){
     return document.querySelector(selector);
@@ -221,14 +235,22 @@ function $(selector) {
 
     /*如果是第一次匹配*/
     if(context === document){
+      /*匹配id选择器*/
       if(selector.charAt(0) === '#'){
         elms.push( document.getElementById(selector.substring(1)) );
         return elms;
       }
 
+      /*匹配标签选择器*/
+      if( tagReg.test(selector) ){
+        return Array.prototype.slice.call( document.getElementsByTagName(selector) );
+      }
+
+      /*取全部dom元素*/
       var allDom = document.getElementsByTagName('*'),
           allDomLen = allDom.length;
 
+      /*匹配class或者属性选择器*/
       for( var k = 0 ; k<allDomLen ; k++){
         if( judAttr(allDom[k]) ) elms.push(allDom[k]);
       }
@@ -242,6 +264,14 @@ function $(selector) {
         selector = selector.substring(1);
         while( context = context.parentNode ){
           if( selector === context.id ) return context;
+        }
+        return null;
+      }
+
+      if( tagReg.test(selector) ){
+        while( context = context.parentNode ){
+          if(context === document) return null;
+          if( selector.toUpperCase() === context.tagName.toUpperCase() ) return context;
         }
         return null;
       }
