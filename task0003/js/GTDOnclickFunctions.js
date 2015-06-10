@@ -134,10 +134,9 @@ function selectMission(){
             contElements.oContMissionBody.dataset.parentId = this.dataset.parentId;
             contElements.oContMissionBody.dataset.missionId = this.dataset.missionId;
 
-            if( !contElements.aTitleBarIcons[0].style.display || contElements.aTitleBarIcons[0].display === 'none' ){
-                for( var i = 0 ; i<contElements.aTitleBarIcons.length ; i++ ){
-                    contElements.aTitleBarIcons[i].style.display = 'block';
-                }
+            if( !contElements.oFinishBtn.style.display || contElements.oFinishBtn.style.display === 'none' ){
+
+                contElements.oFinishBtn.style.display = contElements.oEditBtn.style.display = 'block';
             }
             
         }
@@ -155,8 +154,9 @@ function editMission(){
         var oEditArea = document.createElement('textarea');
         oEditArea.id = 'cont-mission-edit';
         /*把br标签换成换行符*/
-        oEditArea.innerHTML = contElements.oContMissionBody.innerHTML.replace(/\<br\>/g,'\n');
+        oEditArea.innerHTML = htmlReturn(contElements.oContMissionBody.innerHTML).replace(/\<br\>/g,'\n');
 
+        /*使任务主体可编辑*/
         contElements.oContMissionBody.innerHTML = '';
         addClass(contElements.oContMissionBody,'mission-editing');
         contElements.oContMissionBody.appendChild(oEditArea);
@@ -165,7 +165,7 @@ function editMission(){
         var oEditTitle = document.createElement('input');
         oEditTitle.id = 'cont-title-edit';
         oEditTitle.type = 'text';
-        oEditTitle.value = contElements.oMissionTitle.innerHTML;
+        oEditTitle.value = htmlReturn(contElements.oMissionTitle.innerHTML);
         contElements.oMissionTitle.innerHTML = '';
         contElements.oMissionTitle.appendChild(oEditTitle);
 
@@ -200,9 +200,9 @@ function saveEdit(){
         }
 
         /*获取编辑后的值*/
-        mission.name = oEditTitle.value;
-        mission.time = oEditTime.value;
-        mission.text = oEditArea.value;
+        mission.name = htmlEscape(oEditTitle.value);
+        mission.time = htmlEscape(oEditTime.value);
+        mission.text = htmlEscape(oEditArea.value);
 
         /*保存到storage*/
         updateStorage('missions');

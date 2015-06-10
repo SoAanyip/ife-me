@@ -90,6 +90,37 @@ function isMobilePhone(phone) {
   return phoneReg.test(phone);
 }
 
+/*转换常用字符为html字符实体*/
+function htmlEscape(text){
+    return text.replace(/[<>\/"&']/g,function(match,position){
+        switch(match){
+            case '<' : return '&lt;';
+            case '>' : return '&gt;';
+            case '&' : return '&amp;';
+            case '\"' : return '&quot;';
+            case '\'' : return '&apos;';
+            case '\/' : return '&#x2F;';
+        }
+
+    })
+}
+
+/*转换html字符实体为字符*/
+function htmlReturn(text){
+    return text.replace(/((&lt;)|(&gt;)|(&amp;)|(&quot;)|(&apos;)|(&#x2F;))/g,function(match,position){
+        switch(match){
+            case '&lt;' : return '<';
+            case '&gt;' : return '>';
+            case '&amp;' : return '&';
+            case '&quot;' : return '\"';
+            case '&apos;' : return '\'';
+            case '&#x2F;' : return '\/';
+        }
+
+    })
+}
+
+
 //检测dom是否具有名字为className的class
 function hasClass(element,className){
   if(!className || !element || !element.className) return false;

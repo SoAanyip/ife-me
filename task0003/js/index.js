@@ -57,6 +57,7 @@ function recurTab( curCate,spanDeleteFolder,deepth,isFirst ){
     /*名字标签*/
     var nameDiv = document.createElement('div');
     nameDiv.innerHTML = curCate.name;
+    nameDiv.className = 'folder-name';
     nameDiv.dataset.folderId = curCate.folderId;
     nameDiv.appendChild(spanDeleteFolder.cloneNode());
     if(curCate.name === '默认分类'){
@@ -172,6 +173,7 @@ function addFolderToStorage(folderId,newFolderName){
     updateStorage('category');
 }
 
+/*保存删除文件夹的操作*/
 function deleteFolderToStorage(folderId){
     /*当前层级*/
     var category = getCategory().category;
@@ -184,7 +186,12 @@ function deleteFolderToStorage(folderId){
     
 }
 
-
+/**
+ * 递归克隆category,如果有匹配folderId的对象则删除
+ * @param  {JSONObject} src      category对象
+ * @param  {int} folderId 要删除的folder的id
+ * @return {JSONObject}          当前层级的category
+ */
 function cloneCategory(src,folderId) {
     if(src === null) return 'Null';
     if(src === undefined) return 'Undefined';
@@ -301,23 +308,21 @@ function _getMissionContElements(){
         oContTitleBar = $('#cont-title-bar'),    //标题栏
         oMissionTitle = oContTitleBar.getElementsByTagName('h2')[0],    //标题
         oMissionTime = $('#cont-mission-time span'),    //任务完成时间
-        aTitleBarBtns = oContTitleBar.getElementsByTagName('a'),  //标题栏的所有按钮
-        aTitleBarIcons = [],    //未进入编辑状态时显示的按钮
-        aTitleBarWords = [];    //进入了编辑状态后显示的按钮
+        oFinishBtn = $('#finish-mission'),
+        oEditBtn = $('#edit-mission'),
+        oSaveEdit = $('#save-edit'),
+        oCancelEdit = $('#cancel-edit');
 
-    for(var i = 0 ; i<aTitleBarBtns.length ; i++){
-        if( aTitleBarBtns[i].className.indexOf('icon-btn') !== -1 ) aTitleBarIcons.push(aTitleBarBtns[i]);
-        if( aTitleBarBtns[i].className.indexOf('word-btn') !== -1 ) aTitleBarWords.push(aTitleBarBtns[i]);
-    }
     oContTitleBar = null;
-    aTitleBarBtns = null;
 
     var contElements = {
         oContMissionBody : oContMissionBody,
         oMissionTitle : oMissionTitle,
         oMissionTime : oMissionTime,
-        aTitleBarIcons : aTitleBarIcons,
-        aTitleBarWords : aTitleBarWords
+        oFinishBtn : oFinishBtn,
+        oEditBtn : oEditBtn,
+        oSaveEdit : oSaveEdit,
+        oCancelEdit : oCancelEdit
     }
 
     return function(){
@@ -354,20 +359,15 @@ function switchMissonContBtns(type){
 
     if(type === 'edit' ){
         /*使按钮变成保存和取消*/
-        for(var i = 0 ; i<contElements.aTitleBarIcons.length ; i++){
-            contElements.aTitleBarIcons[i].style.display = 'none';
-        }
-        for(var i = 0 ; i<contElements.aTitleBarWords.length ; i++){
-            contElements.aTitleBarWords[i].style.display = 'block';
-        }
+        contElements.oFinishBtn.style.display = contElements.oEditBtn.style.display = 'none';
+
+        contElements.oSaveEdit.style.display = contElements.oCancelEdit.style.display = 'block';
+
     }else if(type === 'see'){
         /*使按钮变成保存和取消*/
-        for(var i = 0 ; i<contElements.aTitleBarIcons.length ; i++){
-            contElements.aTitleBarIcons[i].style.display = 'block';
-        }
-        for(var i = 0 ; i<contElements.aTitleBarWords.length ; i++){
-            contElements.aTitleBarWords[i].style.display = 'none';
-        }
+        contElements.oFinishBtn.style.display = contElements.oEditBtn.style.display = 'block';
+
+        contElements.oSaveEdit.style.display = contElements.oCancelEdit.style.display = 'none';
     }
 }
 
@@ -499,6 +499,7 @@ function updateStorage(name){
         localStorage.setItem( 'missions' , JSON.stringify( getMissions() ) );
     }
 }
+    
 
 /*得到用户分类*/
 function _getCategory(){

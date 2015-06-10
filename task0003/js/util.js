@@ -16,15 +16,17 @@ function getType(src){
 // 使用递归来实现一个深度克隆，可以复制一个目标对象，返回一个完整拷贝
 // 被复制的对象类型会被限制为数字、字符串、布尔、日期、数组、Object对象。不会包含函数、正则对象等
 function cloneObject(src) {
-  if(src === null) return 'Null';
-  if(src === undefined) return 'Undefined';
+  if(src === null) return null;
+  if(src === undefined) return undefined;
   var key,result,srcClass = getType(src);
   if(srcClass === 'Object'){
     result = {};
   }else if(srcClass === 'Array'){
     result = [];
-  }else if(srcClass === 'Number' || srcClass === 'String' || srcClass === 'Boolean'
-    || srcClass === 'Date'){
+  }else if(srcClass === 'Date'){
+    return new Date(+src);
+  }
+  else if(srcClass === 'Number' || srcClass === 'String' || srcClass === 'Boolean'){
     return src;
   }
   for(key in src){
@@ -59,7 +61,8 @@ function uniqArray(arr) {
 function trim(str) {
   if( str === null ) return null;
   if( str === undefined ) return undefined;
-  return str.replace(/(^\s*)|(\s*$)/g, "");
+  /*chrome下’\s’可以匹配全角空格，但是考虑兼容的话，需要加上’\uFEFF\xA0’，去掉BOM头和全角空格。*/
+  return str.replace(/(^[\s\uFEFF\xA0]+)|([\s\uFEFF\xA0]+$)/g, "");
 }
 
 // 实现一个遍历数组的方法，针对数组中每一个元素执行fn函数，并将数组索引和元素作为参赛传递
@@ -70,13 +73,69 @@ function each(arr, fn) {
 }
 
 // 获取一个对象里面第一层元素的数量，返回一个整数
-function getObjectLength(obj) {
+/*function getObjectLength(obj) {
   var len = 0;
   for(var i in obj){
     len++;
   }
   return len; 
-}
+}*/
+
+/**
+* 获取一个对象里面第一层元素的数量，返回一个整数
+* @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys
+*
+* @param {Object} obj
+* @return {number} 元素长度
+*/
+var getObjectLength = (function() {
+  'use strict';
+  var hasOwnProperty = Object.prototype.hasOwnProperty,
+      hasDontEnumBug = !({
+        toString: null
+      }).propertyIsEnumerable('toString'),      /*不可枚举bug*/
+      dontEnums = [
+        'toString',
+        'toLocaleString',
+        'valueOf',
+        'hasOwnProperty',
+        'isPrototypeOf',
+        'propertyIsEnumerable',
+        'constructor'
+      ],/*不可枚举的属性*/
+      dontEnumsLength = dontEnums.length;
+
+  return function(obj) {
+
+    /*如果不是Object*/
+    if (typeof obj !== 'object' && (typeof obj !== 'function' || obj === null)) {
+      throw new TypeError('getObjectLength called on non-object');
+    }
+
+    var result = [],
+        prop, i;
+
+    for (prop in obj) {
+
+      /*如果是自有属性*/
+      if (hasOwnProperty.call(obj, prop)) {
+        result.push(prop);
+      }
+    }
+
+    /*如果有不可枚举bug*/
+    if (hasDontEnumBug) {
+      for (i = 0; i < dontEnumsLength; i++) {
+
+        if (hasOwnProperty.call(obj, dontEnums[i])) {
+          result.push(dontEnums[i]);
+        }
+      }
+    }
+    return result.length;
+  };
+}());
+
 
 // 判断是否为邮箱地址
 function isEmail(emailStr) {
@@ -90,12 +149,47 @@ function isMobilePhone(phone) {
   return phoneReg.test(phone);
 }
 
+/*转换常用字符为html字符实体*/
+function htmlEscape(text){
+    return text.replace(/[<>\/"&']/g,function(match,position){
+        switch(match){
+            case '<' : return '&lt;';
+            case '>' : return '&gt;';
+            case '&' : return '&amp;';
+            case '\"' : return '&quot;';
+            case '\'' : return '&apos;';
+            case '\/' : return '&#x2F;';
+        }
+
+    })
+}
+
+/*转换html字符实体为字符*/
+function htmlReturn(text){
+    return text.replace(/(&lt;|&gt;|&amp;|&quot;|&apos;|&#x2F;)/g,function(match,position){
+        switch(match){
+            case '&lt;' : return '<';
+            case '&gt;' : return '>';
+            case '&amp;' : return '&';
+            case '&quot;' : return '\"';
+            case '&apos;' : return '\'';
+            case '&#x2F;' : return '\/';
+        }
+
+    })
+}
+
+
 //检测dom是否具有名字为className的class
 function hasClass(element,className){
   if(!className || !element || !element.className) return false;
-  var index = element.className.indexOf(className);
-  if(index === -1) return false;
-  return true;
+  classNames = element.className.split(/\s+/);
+  for (var i = 0, len = classNames.length; i < len; i++) {
+    if (classNames[i] === className) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // 为dom增加一个样式名为newClassName的新样式
@@ -103,8 +197,8 @@ function addClass(element, newClassName) {
   if(!newClassName || !element) return;
   if(!element.className){
     element.className = newClassName;
-  }else if(element.className.indexOf(newClassName) === -1){
-    element.className+=' '+newClassName;
+  }else if(!hasClass(element,newClassName)){
+    element.className = [element.className, newClassName].join(' ');
   }
 }
 
@@ -112,9 +206,13 @@ function addClass(element, newClassName) {
 function removeClass(element, oldClassName) {
   if(!oldClassName || !element || !element.className) return;
   if(oldClassName === '*') return element.className = '';
-  var index = element.className.indexOf(oldClassName);
-  if(index === -1) return;
-  element.className = element.className.substring(0,index) + element.className.substring(index+oldClassName.length);
+  var classNames = element.className.split(/\s+/);
+  for (var i = 0, len = classNames.length; i < len; i++) {
+    if (classNames[i] === oldClassName) {
+      classNames.splice(i, 1);
+    }
+  }
+  element.className = classNames.join(' ');
 }
 
 // toggleClass
@@ -129,27 +227,12 @@ function isSiblingNode(element, siblingNode) {
   return element.parentNode === siblingNode.parentNode;
 }
 
-// 获取dom相对于浏览器窗口的位置，返回一个对象{x, y}
+// 获取dom相对于浏览器窗口的位置，返回一个对象
 function getPosition(element) {
   if(!element) return undefined;
-  var position = {
-    x:getLeft(element),
-    y:getTop(element)
-  };
-  return position;
-
-    //获取元素的纵坐标
-  function getTop(e){
-    var offset=e.offsetTop;
-    if(e.offsetParent!=null) offset+=arguments.callee(e.offsetParent);
-    return offset;
-  }
-  //获取元素的横坐标
-  function getLeft(e){
-    var offset=e.offsetLeft;
-    if(e.offsetParent!=null) offset+=arguments.callee(e.offsetParent);
-    return offset;
-  } 
+  var box = element.getBoundingClientRect();
+  /*box.top,box.left,box.bottom,box.right,表示元素各边与页面上边和左边的距离*/
+  return box;
 }
 
 // 实现一个简单的Query
@@ -341,8 +424,6 @@ function addEvent(element, event, listener) {
     });
     
     element.attachEvent('on'+event,_listener);
-  }else{
-    element['on'+event] = listener;
   }
 }
 
@@ -386,10 +467,7 @@ function removeEvent(element, event, listener) {
     }
     else{
       element.detachEvent('on'+event,findWrapEvent(element,event,listener));
-    }
-
-  }else{
-    element['on'+event] = null;
+    } 
   }
 }
 
@@ -403,77 +481,32 @@ function addClickEvent(element, listener) {
 function addEnterEvent(element, listener) {
   if(!listener || !element) return;
 
-  element['keyupEvents'] = element['keyupEvents'] || [];
-  var _listener = undefined;
-
-  if(element.addEventListener){
-
-    /*包装函数*/
-     _listener = function(event){
-      if(event.keyCode == 13){
-        listener.call(element,event);
-      }
-    };
-
-    element['keyupEvents'].push({
-      raw:listener,
-      wrap:_listener
-    });
-
-    element.addEventListener('keyup',_listener,false);
-  }else if(element.attachEvent){
-
-    _listener = function(){
-      if(window.event.keyCode == 13){
-        listener.call(element,window.event);
-      }
+  var _listener = function(event){
+    event = event || window.event;
+    var keyCode = event.which || event.keyCode;
+    if( keyCode == 13 ){
+      listener.call(element,event);
     }
-
-    element['keyupEvents'].push({
-      raw:listener,
-      wrap:_listener
-    });
-
-    element.attachEvent('onkeyup',_listener);
   }
+
+  addEvent(element,'keyup',_listener);
 }
 
 //事件委托
 function delegateEvent(element, tag, event, listener) {
   if(!listener || !event || !tag || !element) return;
 
-  element[event+'Events'] = element[event+'Events'] || [];
-  var _listener = undefined;
 
-  if(element.addEventListener){
-
-    _listener = function(ev){
-      if(ev.target.tagName.toUpperCase() === tag.toUpperCase() || tag === '*'){
-        listener.call(ev.target,ev);
-      }
+  var _listener = function(event){
+    event = event || window.event;
+    var target = event.target || event.srcElement;
+    if(target.tagName === tag.toUpperCase() || tag === '*'){
+        listener.call(target,event);
     }
-    element[event+'Events'].push({
-      raw:listener,
-      wrap:_listener
-    });
-
-    addEvent(element,event,_listener);
-  }else if(element.attachEvent){
-
-    _listener = function(){
-      if(window.event.srcElement.tagName.toUpperCase() === tag.toUpperCase()){
-        listener.call(window.event.srcElement,window.event);
-      }
-    }
-    element[event+'Events'].push({
-      raw:listener,
-      wrap:_listener
-    });
-    addEvent(element,event,_listener);
-
-  }else{
-    return false;
   }
+
+  addEvent(element,event,_listener);
+ 
 }
 
 /*根据传入的用户定义函数找出真正添加的函数*/
@@ -491,40 +524,69 @@ function findWrapEvent(element,event,raw){
 }
 
 $.on = function(selector, event, listener) {
-  addEvent($(selector),event,listener);
+  return addEvent($(selector),event,listener);
 }
 
 $.click = function(selector, listener) {
-  addClickEvent($(selector),listener);
+  return addClickEvent($(selector),listener);
 }
 
 $.un = function(selector, event, listener) {
-  removeEvent($(selector),event,listener);
+  return removeEvent($(selector),event,listener);
 }
 
 $.delegate = function(selector, tag, event, listener) {
-  delegateEvent($(selector),tag,event,listener);
+  return delegateEvent($(selector),tag,event,listener);
 }
 
 // 判断是否为IE浏览器，返回-1或者版本号
 function isIE() {
-  var userAgent = navigator.userAgent;
+  //'\x241' 是八进制表示法 '\x24' 对应字符 '$' ，所以 '\x241'  等同于 '$1'
+  //RegExp['$1'] ：是JS属性的另一种调用方式等同于 RegExp.$1。js中每个属性相当于一个数组元素。
+  //+ RegExp['\x241'] 就相当于 +RegExp.$1
+  //RegExp.$1 是取出正则匹配的第一个捕获，+能够将后面的“整形字符串”转换成 “整形”
+  return /msie (\d+\.\d+)/i.test(navigator.userAgent) ? (document.documentMode || + RegExp['\x241']) : -1;
+  /*var userAgent = navigator.userAgent;
   var version = userAgent.indexOf("MSIE"); 
   if (version < 0) {
     return -1;
   }
-  return parseFloat(userAgent.substring(version + 5, userAgent.indexOf(";", version)));
+  return parseFloat(userAgent.substring(version + 5, userAgent.indexOf(";", version)));*/
+}
+
+/*验证cookie命名是否合法*/
+function isValidCookieName(cookieName) {
+  // http://www.w3.org/Protocols/rfc2109/rfc2109
+  // 以下是在cookie中不合法的命名
+  // av-pairs = av-pair *(";" av-pair)
+  // av-pair = attr ["=" value] ; optional value
+  // attr = token
+  // value = word
+  // word = token | quoted-string
+  // http://www.ietf.org/rfc/rfc2068.txt
+  // token = 1*<any CHAR except CTLs or tspecials>
+  // CHAR = <any US-ASCII character (octets 0 - 127)>
+  // CTL = <any US-ASCII control character
+  // (octets 0 - 31) and DEL (127)>
+  // tspecials = "(" | ")" | "<" | ">" | "@"
+  // | "," | ";" | ":" | "\" | <">
+  // | "/" | "[" | "]" | "?" | "="
+  // | "{" | "}" | SP | HT
+  // SP = <US-ASCII SP, space (32)>
+  // HT = <US-ASCII HT, horizontal-tab (9)>
+  return (new RegExp('^[^\\x00-\\x20\\x7f\\(\\)<>@,;:\\\\\\\"\\[\\]\\?=\\{\\}\\/\\u0080-\\uffff]+\x24'))
+  .test(cookieName);
 }
 
 // 设置cookie
 function setCookie(cookieName, cookieValue, expiredays) {
-  if(!cookieName) return;
+  if(!cookieName || !isValidCookieName(cookieName)) return;
   cookieValue = cookieValue || '';
   expiredays = expiredays || 30;
   var date = new Date();
   date.setDate(date.getDate()+expiredays);
   /*if(!getCookie(cookieName)){*/
-  document.cookie=encodeURIComponent(cookieName) +'='+encodeURIComponent(cookieValue)+';expires='+date.toUTCString();
+  document.cookie=cookieName +'='+encodeURIComponent(cookieValue)+';expires='+date.toUTCString();
   /*}else{
     document.cookie.replace(getCookie(cookieName),cookieValue);
   }*/
@@ -533,8 +595,9 @@ function setCookie(cookieName, cookieValue, expiredays) {
 
 // 获取cookie值
 function getCookie(cookieName) {
-  if(!cookieName) return '';
-  var nameStart = document.cookie.indexOf(encodeURIComponent(cookieName)+'=');
+  if(!cookieName || !isValidCookieName(cookieName)) return;
+
+  var nameStart = document.cookie.indexOf(cookieName+'=');
   if(nameStart>=0){
     nameStart = nameStart+cookieName.length+1;
     var nameEnd = document.cookie.indexOf(';',nameStart);
@@ -604,6 +667,7 @@ function ajax(url, options) {
     }
     str = str.substring(0,str.length-1);
     xhr.open("GET",url+str,true);  
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.send(null);
   }
 
@@ -621,7 +685,8 @@ function ajax(url, options) {
       
     }
     str = str.substring(0,str.length-1);
-    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded; charset=UTF-8');
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
     xhr.open("POST",url,true);  
     xhr.send(str);
   }

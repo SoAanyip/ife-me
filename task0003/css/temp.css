@@ -39,7 +39,7 @@ menu {
   margin: 0;
   padding: 0;
 }
-menu > div,
+.tab-wrap,
 #mission-side {
   position: absolute;
   top: 60px;
@@ -67,44 +67,62 @@ menu > div,
   margin: .4em 0 .4em .5em;
 }
 #tab-ul li {
-  margin: .3em 0 ;
-  padding: 0;
   list-style: none;
-}
-#tab-ul ul > li {
-  padding-left: 2em;
-  background: url("../img/icon-file.png") no-repeat left 100%;
+  margin-left: .5em;
   cursor: pointer;
 }
+#tab-ul li:before {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  background-position: -90px 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  content: "";
+}
 #tab-ul .tab-tree-li {
-  padding: 0;
-  margin-left: .2em;
   background: none;
   cursor: default;
 }
 #tab-ul .tab-tree-li:hover {
   color: #000;
 }
-#tab-ul div {
+#tab-ul .tab-tree-li:before {
+  display: none;
+}
+.folder-name {
   margin: 0;
-  padding: .5em 0 0 2em;
-  background: url("../img/icon-folder.png") no-repeat left 100%;
+  padding: .5em 0 0 .2em;
   cursor: pointer;
 }
-#tab-ul div:hover,
-#tab-ul ul > li:hover {
-  color: #6abb42;
-}
-#tab-ul div:hover > .delete-folder {
-  display: block;
-}
-.delete-folder {
-  display: none;
-  float: right;
+.folder-name:before {
+  display: inline-block;
   width: 20px;
   height: 20px;
-  padding-right: 1em;
-  background: url("../img/icon-delete.png") no-repeat;
+  vertical-align: middle;
+  background-position: -116px 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  content: "";
+}
+.folder-name:hover,
+#tab-ul li:hover {
+  color: #6abb42;
+}
+.folder-name:hover > .delete-folder {
+  visibility: visible;
+}
+.delete-folder {
+  float: right;
+  margin-right: 1em;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  background-position: -64px 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  visibility: hidden;
 }
 .add-at-bottom {
   position: absolute;
@@ -117,11 +135,20 @@ menu > div,
   font-size: .9em;
   background-color: #f2f2f2;
 }
-.add-at-bottom a {
+.add-at-bottom-link {
   display: block;
   text-decoration: none;
   color: #000;
-  background: url("../img/icon-plus.png") no-repeat 10% 50%;
+}
+.add-at-bottom-link:before {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  background-position: -142px 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  content: "";
 }
 /* mission-side */
 #mission-side {
@@ -208,8 +235,8 @@ menu > div,
 }
 .icon-btn {
   display: none;
-  width: 30px;
-  height: 30px;
+  float: right;
+  margin: 10px 16px 0 0;
   border: none;
 }
 .word-btn {
@@ -230,16 +257,23 @@ menu > div,
   float: right;
   margin: 16px 16px 0px 0px;
 }
-#edit-mission,
-#finish-mission {
-  float: right;
-  margin: 10px 16px 0 0;
-}
 #edit-mission {
-  background: url("../img/icon-write.png") no-repeat;
+  width: 30px;
+  height: 30px;
+  vertical-align: middle;
+  background-position: -32px 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  /* background: url("../img/icon-write.png") no-repeat; */
 }
 #finish-mission {
-  background: url("../img/icon-finish.png") no-repeat;
+  width: 30px;
+  height: 30px;
+  vertical-align: middle;
+  background-position: 0 0;
+  background-image: url("../img/icon-sprite.png");
+  background-repeat: no-repeat;
+  /* background: url("../img/icon-finish.png") no-repeat; */
 }
 #cont-mission-time {
   height: 50px;
