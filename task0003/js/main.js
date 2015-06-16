@@ -1,8 +1,8 @@
 require.config({
     baseUrl: 'js',
     paths: {
-        util: 'util.min',
-        gtd: 'index.min'
+        util: 'util',
+        gtd: 'index'
 
     }
 });
